@@ -49,7 +49,7 @@
 
                 <div class="mb-6">
                     <div class="flex items-center">
-                        <input type="checkbox" name="active" id="active" value="1" {{ old('active', true) ? 'checked' : '' }} class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+                        <input type="checkbox" name="active" id="active" value="1" {{ old('active', '1') ? 'checked' : '' }} class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
                         <label for="active" class="ml-2 block text-sm font-medium text-gray-700">
                             QR Code Ativo
                         </label>

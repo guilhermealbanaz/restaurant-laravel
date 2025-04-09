@@ -110,7 +110,21 @@
                     
                     <div class="flex flex-col items-center">
                         <div class="p-4 bg-white rounded-lg shadow-md mb-4">
-                            <img src="{{ route('admin.qrcodes.generate', $qrCode) }}" alt="QR Code para Mesa {{ $qrCode->table_number }}" class="w-64 h-64 mx-auto">
+                            <img 
+                                src="{{ route('admin.qrcodes.generate', $qrCode) }}" 
+                                alt="QR Code para Mesa {{ $qrCode->table_number }}" 
+                                class="w-64 h-64 mx-auto"
+                                onerror="this.style.display='none';document.getElementById('qrcode-error-show').style.display='flex';"
+                            >
+                            <div id="qrcode-error-show" class="w-64 h-64 mx-auto border-2 border-dashed border-gray-300 rounded flex items-center justify-center text-center" style="display: none;">
+                                <div>
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-red-400 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <p class="text-red-500 font-medium">Erro ao carregar QR Code</p>
+                                    <p class="text-gray-600 text-sm mt-2">Tente imprimir a partir da opção abaixo.</p>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="text-center mb-6">
@@ -127,7 +141,7 @@
                                     <span>Imprimir QR Code</span>
                                 </div>
                             </a>
-                            <a href="{{ route('admin.qrcodes.generate', $qrCode) }}" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2" download="qrcode-mesa-{{ $qrCode->table_number }}.png" target="_blank">
+                            <a href="{{ route('admin.qrcodes.generate', $qrCode) }}" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2" download="qrcode-mesa-{{ $qrCode->table_number }}.svg" target="_blank">
                                 <div class="flex items-center">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
                                         <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />

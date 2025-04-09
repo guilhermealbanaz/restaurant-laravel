@@ -65,10 +65,10 @@ Route::middleware(['auth', AdminMiddleware::class])->prefix('admin')->name('admi
     Route::delete('/ratings/{rating}', [RatingController::class, 'destroy'])->name('ratings.destroy');
     
     // gerenciamento de QR codes
-    Route::resource('qrcodes', QRCodeController::class);
+    Route::resource('qrcodes', QRCodeController::class)->parameters(['qrcodes' => 'qrCode']);
+
     // vou ter q achar oq ta sendo feito de errado na geração do qrcode
     Route::get('/qrcodes/{qrCode}/generate', [QRCodeController::class, 'generate'])->name('qrcodes.generate');
-    Route::get('/qrcodes/{qrCode}/generate-base64', [QRCodeController::class, 'generateBase64'])->name('qrcodes.generate_base64');
     Route::get('/qrcodes/{qrCode}/print', [QRCodeController::class, 'print'])->name('qrcodes.print');
     
     // relatorios

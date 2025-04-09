@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>QR Code - Mesa {{ $qrCode->table_number }}</title>
     
     @vite(['resources/css/app.css'])
@@ -64,24 +65,25 @@
             
             <div class="flex justify-center mb-8">
                 <div class="p-4 bg-white border-2 border-gray-300 rounded-lg">
-                    <!-- vai ficar assim por enquanto até conseguir fazer api funcionar -->
-                    <img id="qrcode-image" src="#" alt="QR Code para Mesa {{ $qrCode->table_number }}" class="w-64 h-64" style="display: none;">
-                    <div id="qrcode-loading" class="qrcode-placeholder">
-                        <div class="text-center">
-                            <svg aria-hidden="true" class="w-12 h-12 mx-auto mb-2 text-gray-300 animate-spin fill-blue-600" viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z" fill="currentColor"/>
-                                <path d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z" fill="currentFill"/>
-                            </svg>
-                            <p class="text-gray-500">Carregando QR Code...</p>
-                        </div>
-                    </div>
+                    <img 
+                        src="{{ route('admin.qrcodes.generate', $qrCode) }}" 
+                        alt="QR Code para Mesa {{ $qrCode->table_number }}" 
+                        class="w-64 h-64" 
+                        onerror="this.style.display='none';document.getElementById('qrcode-error').style.display='flex';"
+                    >
+                    
                     <div id="qrcode-error" class="qrcode-placeholder" style="display: none;">
                         <div class="text-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-red-400 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            <p class="text-gray-500">Erro ao carregar QR Code</p>
-                            <a href="{{ route('admin.qrcodes.show', $qrCode) }}" class="text-sm text-blue-600 block mt-2">Volte e tente novamente</a>
+                            <p class="text-red-500 font-medium">Erro ao carregar QR Code</p>
+                            <p class="text-gray-500 mt-1 mb-2 text-sm">Por favor, use o link abaixo:</p>
+                            <div class="border-2 border-dashed border-gray-300 rounded p-4 text-center mt-2">
+                                <p class="font-bold">Mesa {{ $qrCode->table_number }}</p>
+                                <p class="text-sm text-gray-600 mt-2 mb-1">Acesse via:</p>
+                                <p class="text-blue-600 text-sm break-all font-medium">{{ route('menu.table', ['code' => $qrCode->code]) }}</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -99,62 +101,5 @@
             </div>
         </div>
     </div>
-
-    <script>
-        // carregar qr code via ajax com base64
-        document.addEventListener('DOMContentLoaded', function() {
-            const qrImage = document.getElementById('qrcode-image');
-            const qrLoading = document.getElementById('qrcode-loading');
-            const qrError = document.getElementById('qrcode-error');
-            
-            // função para carregar o qr code
-            function loadQrCode() {
-                // primeiro tenta o método base64 via ajax
-                fetch('{{ route('admin.qrcodes.generate_base64', $qrCode) }}')
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Resposta não foi OK');
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        if (data.success) {
-                            // usar o base64 como src da imagem
-                            qrImage.src = data.base64;
-                            qrImage.style.display = 'block';
-                            qrLoading.style.display = 'none';
-                            qrError.style.display = 'none';
-                            
-                            // atualizar url se necessário
-                            const menuUrl = document.getElementById('menu-url');
-                            if (menuUrl && data.url) {
-                                menuUrl.textContent = data.url;
-                            }
-                        } else {
-                            throw new Error(data.message || 'Erro desconhecido');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Erro ao carregar QR code:', error);
-                        
-                        // Tenta o método tradicional como fallback
-                        // qrImage.src = '{{ url(route('admin.qrcodes.generate', $qrCode, false)) }}';
-                        // qrImage.onload = function() {
-                        //     qrImage.style.display = 'block';
-                        //     qrLoading.style.display = 'none';
-                        //     qrError.style.display = 'none';
-                        // };
-                        // qrImage.onerror = function() {
-                        //     qrImage.style.display = 'none';
-                        //     qrLoading.style.display = 'none';
-                        //     qrError.style.display = 'flex';
-                        // };
-                    });
-            }
-            
-            // tenta carregar o qr code
-            loadQrCode();
-        });
-    </script>
 </body>
 </html>

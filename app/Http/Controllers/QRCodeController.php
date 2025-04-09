@@ -6,6 +6,10 @@ use App\Models\QrCode;
 use Illuminate\Http\Request;
 use SimpleSoftwareIO\QrCode\Facades\QrCode as QrCodeGenerator;
 use Illuminate\Support\Str;
+use BaconQrCode\Renderer\ImageRenderer;
+use BaconQrCode\Renderer\RendererStyle\RendererStyle;
+use BaconQrCode\Renderer\Image\SvgImageBackEnd;
+use BaconQrCode\Writer;
 
 class QRCodeController extends Controller
 {
@@ -35,7 +39,7 @@ class QRCodeController extends Controller
         QrCode::create([
             'table_number' => $validated['table_number'],
             'code' => $code,
-            'active' => $validated['active'] ?? true,
+            'active' => $request->has('active'),
         ]);
 
         return redirect()->route('admin.qrcodes.index')
@@ -61,7 +65,7 @@ class QRCodeController extends Controller
 
         $qrCode->update([
             'table_number' => $validated['table_number'],
-            'active' => $validated['active'] ?? true,
+            'active' => $request->has('active'),
         ]);
 
         return redirect()->route('admin.qrcodes.index')
@@ -70,10 +74,20 @@ class QRCodeController extends Controller
 
     public function destroy(QrCode $qrCode)
     {
-        $qrCode->delete();
-
-        return redirect()->route('admin.qrcodes.index')
-            ->with('success', 'QR Code excluído com sucesso.');
+        try {
+            if (!$qrCode || !$qrCode->exists) {
+                return redirect()->route('admin.qrcodes.index')
+                    ->with('error', 'QR Code não encontrado.');
+            }
+            
+            $qrCode->delete();
+            
+            return redirect()->route('admin.qrcodes.index', ['_' => time()])
+                ->with('success', 'QR Code excluído com sucesso.');
+        } catch (\Exception $e) {
+            return redirect()->route('admin.qrcodes.index')
+                ->with('error', 'Erro ao excluir QR Code: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -85,26 +99,63 @@ class QRCodeController extends Controller
             // gera a url absoluta para o menu da mesa
             $url = route('menu.table', ['code' => $qrCode->code]);
             
-            $qrCodeImage = QrCodeGenerator::format('png')
-                ->size(300)
-                ->margin(1)
-                ->backgroundColor(255, 255, 255)
-                ->color(0, 0, 0)
-                ->errorCorrection('H')
-                ->generate($url);
+            $renderer = new ImageRenderer(
+                new RendererStyle(300, 1),
+                new SvgImageBackEnd()
+            );
+            $writer = new Writer($renderer);
+            $svgQrCode = $writer->writeString($url);
             
-            // retorna a imagem com cabeçalhos apropriados para exibição e cache
-            return response($qrCodeImage)
-                ->header('Content-Type', 'image/png')
-                ->header('Cache-Control', 'public, max-age=604800'); // cache por 1 semana
+            return response($svgQrCode)
+                ->header('Content-Type', 'image/svg+xml')
+                ->header('Cache-Control', 'public, max-age=86400'); // cache por 1 dia
         } catch (\Exception $e) {
-            \Log::error('Erro ao gerar QR code: ' . $e->getMessage());
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json([
+                    'error' => 'Não foi possível gerar o QR Code',
+                    'message' => $e->getMessage()
+                ], 500);
+            }
             
-            return response()->json([
-                'error' => 'Não foi possível gerar o QR Code',
-                'message' => $e->getMessage()
-            ], 500);
+            try {
+                $textImage = $this->createTextImage(
+                    'QR Code para Mesa ' . $qrCode->table_number,
+                    route('menu.table', ['code' => $qrCode->code])
+                );
+                
+                return response($textImage)
+                    ->header('Content-Type', 'image/png');
+            } catch (\Exception $innerEx) {
+                return response('Erro ao gerar QR Code: ' . $e->getMessage(), 500)
+                    ->header('Content-Type', 'text/plain');
+            }
         }
+    }
+    
+    /**
+     * só cria uma imagem de texto simples pra fallback
+     */
+    private function createTextImage($title, $url)
+    {
+        $img = imagecreatetruecolor(300, 300);
+        
+        $white = imagecolorallocate($img, 255, 255, 255);
+        $black = imagecolorallocate($img, 0, 0, 0);
+        $blue = imagecolorallocate($img, 0, 0, 255);
+        
+        imagefill($img, 0, 0, $white);
+        
+        imagestring($img, 5, 10, 120, "QR Code indisponivel", $black);
+        imagestring($img, 3, 10, 140, "Por favor use o link:", $black);
+        imagestring($img, 3, 10, 160, $url, $blue);
+        
+        ob_start();
+        imagepng($img);
+        $imageData = ob_get_clean();
+        
+        imagedestroy($img);
+        
+        return $imageData;
     }
 
     public function print(QrCode $qrCode)
@@ -129,36 +180,5 @@ class QRCodeController extends Controller
             'success' => true,
             'table_number' => $qrCode->table_number,
         ]);
-    }
-
-    public function generateBase64(QrCode $qrCode)
-    {
-        try {
-            $url = route('menu.table', ['code' => $qrCode->code]);
-            
-            $qrCodeImage = QrCodeGenerator::format('png')
-                ->size(300)
-                ->margin(1)
-                ->backgroundColor(255, 255, 255)
-                ->color(0, 0, 0)
-                ->errorCorrection('H')
-                ->generate($url);
-            
-            $base64 = 'data:image/png;base64,' . base64_encode($qrCodeImage);
-            
-            return response()->json([
-                'success' => true,
-                'base64' => $base64,
-                'url' => $url
-            ]);
-        } catch (\Exception $e) {
-            \Log::error('Erro ao gerar QR code base64: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'error' => 'Não foi possível gerar o QR Code',
-                'message' => $e->getMessage()
-            ], 500);
-        }
     }
 } 
