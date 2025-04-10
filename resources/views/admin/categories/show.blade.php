@@ -193,14 +193,14 @@
                         </svg>
                         <p class="text-lg">Nenhum prato cadastrado nesta categoria</p>
                         <p class="mt-2 mb-6">Adicione pratos para exibi-los aqui.</p>
-                        <a href="{{ route('admin.dishes.create', ['category_id' => $category->id]) }}" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
-                            <div class="flex items-center justify-center">
+                        <div class="flex justify-center">
+                            <a href="{{ route('admin.dishes.create', ['category_id' => $category->id]) }}" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
                                     <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
                                 </svg>
                                 <span>Adicionar Prato</span>
-                            </div>
-                        </a>
+                            </a>
+                        </div>
                     </div>
                 @endif
             </div>
